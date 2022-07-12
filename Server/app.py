@@ -31,13 +31,13 @@ def connect_db():
 def db_cursor():
     return connect_db().cursor()
 
-# Create two tables: users, reservations, and devices
+# Create two tables: users, reservations, and items
 def initialize_db():
     db = connect_db()
     db_cur = db.cursor()
     db_cur.execute('''CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT NOT NULL,
+        username TEXT UNIQUE NOT NULL,
         hash TEXT NOT NULL,
         salt TEXT NOT NULL,
         email TEXT NOT NULL,
@@ -48,10 +48,10 @@ def initialize_db():
         username TEXT NOT NULL,
         start_time TEXT NOT NULL,
         end_time TEXT NOT NULL,
-        device TEXT NOT NULL,
+        item TEXT NOT NULL,
         status TEXT NOT NULL
     )''')
-    db_cur.execute('''CREATE TABLE IF NOT EXISTS devices (
+    db_cur.execute('''CREATE TABLE IF NOT EXISTS items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT UNIQUE NOT NULL,
         description TEXT NOT NULL,
@@ -71,17 +71,14 @@ def get_hash(password, salt):
     # Return hash
     return hash.hex()
 
-# Get readable time from a timestamp
-def get_time(timestamp):
-    return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
-# Convert timestamp to readable time
-def get_readable_time(timestamp):
-    return datetime.datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-
 # Convert readable time to timestamp
-def get_timestamp(readable_time):
-    return timestamp.get_timestamp(readable_time)
+def readable_to_timestamp(readable_time):
+    # Convert readable time to datetime object
+    readable_time = datetime.datetime.strptime(readable_time, '%Y-%m-%d %H:%M:%S')
+    # Convert datetime object to timestamp
+    timestamp = int(readable_time.timestamp())
+    # Return timestamp
+    return timestamp
 
 ### BACKEND ###
 def get_reservation(reservation_id):
@@ -106,16 +103,16 @@ def user_exists(username):
     # Return True if user exists
     return user is not None
 
-def device_exists(device_name):
+def item_exists(item_name):
     # Define db and db_cur
     db = connect_db()
     db_cur = db.cursor()
-    # Check if device exists
-    device = db_cur.execute('SELECT * FROM devices WHERE name = ?', (device_name,)).fetchone()
+    # Check if item exists
+    item = db_cur.execute('SELECT * FROM items WHERE name = ?', (item_name,)).fetchone()
     # Close db connection
     db.close()
-    # Return True if device exists
-    return device is not None
+    # Return True if item exists
+    return item is not None
 
 ### USER FUNCTIONS ###
 
@@ -162,18 +159,18 @@ def login():
     # Return user info
     return jsonify({'username': user[1], 'permissions': user[5]})
 
-# Get list of devices
-@app.route('/devices', methods=['GET'])
-def get_devices():
+# Get list of items
+@app.route('/items', methods=['GET'])
+def get_items():
     # Define db and db_cur
     db = connect_db()
     db_cur = db.cursor()
-    # Get list of devices from database
-    devices = db_cur.execute('SELECT * FROM devices').fetchall()
+    # Get list of items from database
+    items = db_cur.execute('SELECT * FROM items').fetchall()
     # Close database connection
     db.close()
-    # Return list of devices
-    return jsonify(devices)
+    # Return list of items
+    return jsonify(items)
 
 # Get list of reservations
 @app.route('/reservations', methods=['GET'])
@@ -191,69 +188,49 @@ def get_reservations():
 # Handle reservation request
 @app.route('/reserve', methods=['POST'])
 def reserve():
-    # Define db and db_cur
-    db = connect_db()
-    db_cur = db.cursor()
-    # Get username, password, start time, end time, and device from request
+    # Get username, password, start time, end time, and item from request
     username = request.form['username']
     password = request.form['password']
     start_time = request.form['start_time']
     end_time = request.form['end_time']
-    device = request.form['device']
+    item = request.form['item']
     # Authenticate user
     if not authenticate(username, password):
-        # Close database connection
-        db.close()
         return jsonify({'error': 'Authentication failed'})
-    # Check if device exists
-    device = db_cur.execute('SELECT * FROM devices WHERE name = ?', (device,)).fetchone()
-    if device is None:
-        # Close database connection
-        db.close()
-        return jsonify({'error': 'Device not found'})
-    # Check if device is available
-    reservation = db_cur.execute('SELECT * FROM reservations WHERE device = ?', (device[1])).fetchone()
-    if reservation is not None:
-        # Close database connection
-        db.close()
-        return jsonify({'error': 'Device is not available'})
+    # Check if item exists
+    if not item_exists(item):
+        return jsonify({'error': 'Item not found'})
     # Check if start time is before end time
     if readable_to_timestamp(start_time) > readable_to_timestamp(end_time):
-        # Close database connection
-        db.close()
         return jsonify({'error': 'Start time is after end time'})
     # Check if start time is after current time
-    if readable_to_timestamp(start_time) < timestamp.now():
-        # Close database connection
-        db.close()
+    if readable_to_timestamp(start_time) < datetime.datetime.now().timestamp():
         return jsonify({'error': 'Start time is before current time'})
     # Check if end time is after current time
-    if readable_to_timestamp(end_time) < timestamp.now():
-        # Close database connection
-        db.close()
+    if readable_to_timestamp(end_time) < datetime.datetime.now().timestamp():
         return jsonify({'error': 'End time is before current time'})
+    # Get conflicting reservation details
+    db = connect_db()
+    db_cur = db.cursor()
+    previous_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND end_time > ?', (item, readable_to_timestamp(start_time),)).fetchone()
+    next_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time < ?', (item, readable_to_timestamp(end_time),)).fetchone()
+    db.close()
     # Check if start time is before end time of previous reservation
-    reservation = db_cur.execute('SELECT * FROM reservations WHERE start_time < ? AND end_time > ?', (readable_to_timestamp(end_time), readable_to_timestamp(start_time))).fetchone()
-    if reservation is not None:
-        if readable_to_timestamp(start_time) < readable_to_timestamp(reservation[2]):
-            # Close database connection
-            db.close()
-            return jsonify({'error': 'Start time is before end time of previous reservation'})
+    if previous_reservation is not None:
+        return jsonify({'error': 'Start time is before end time of previous reservation'})
     # Check if end time is after start time of next reservation
-    reservation = db_cur.execute('SELECT * FROM reservations WHERE start_time > ? AND end_time < ?', (readable_to_timestamp(start_time), readable_to_timestamp(end_time))).fetchone()
-    if reservation is not None:
-        if readable_to_timestamp(end_time) > readable_to_timestamp(reservation[1]):
-            # Close database connection
-            db.close()
-            return jsonify({'error': 'End time is after start time of next reservation'})
+    if next_reservation is not None:
+        return jsonify({'error': 'End time is after start time of next reservation'})
+    # Connect to database
+    db = connect_db()
+    db_cur = db.cursor()
     # Insert reservation into database
-    db_cur.execute('INSERT INTO reservations (username, device, start_time, end_time) VALUES (?, ?, ?, ?)', (username, device[1], readable_to_timestamp(start_time), readable_to_timestamp(end_time)))
-    # Commit changes
-    db.commit()
+    db_cur.execute('INSERT INTO reservations (username, item, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)', (username, item[1], readable_to_timestamp(start_time), readable_to_timestamp(end_time), 'pending'))
     # Close database connection
+    db.commit()
     db.close()
     # Return reservation info
-    return jsonify({'username': username, 'device': device[1], 'start_time': start_time, 'end_time': end_time, 'status': 'pending'})
+    return jsonify({'username': username, 'item': item, 'start_time': start_time, 'end_time': end_time, 'status': 'pending'})
 
 # Cancel reservation
 @app.route('/cancel', methods=['POST'])
@@ -282,7 +259,7 @@ def cancel():
     db.commit()
     db.close()
     # Return reservation info
-    return jsonify({'username': username, 'device': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'cancelled'})
+    return jsonify({'username': username, 'item': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'cancelled'})
 
 ### END USER FUNCTIONS ###
 
@@ -292,23 +269,24 @@ def cancel():
 # Authenticate and check if user is admin
 def authenticate_admin(username, password):
     # Check if username exists
-    if not username_exists(username):
-        return False
-    if user is None:
+    if not user_exists(username):
+        # Close database connection
+        db.close()
         return False
     # Get hash and salt from database
     db = connect_db()
     db_cur = db.cursor()
-    user = db_cur.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+    hash_and_salt = db_cur.execute('SELECT hash, salt FROM users WHERE username = ?', (username,)).fetchone()
+    # Close database connection
     db.close()
-    # Check if password is valid
-    if hash_salt[0] != get_hash(password, hash_salt[1]):
+    # Check if password is correct
+    if hash_and_salt is not None:
+        if hash_and_salt[0] == get_hash(password, hash_and_salt[1]):
+            return True
+        else:
+            return False
+    else:
         return False
-    # Check if user is admin
-    if user[3] != 'admin':
-        return False
-    # Return True if user is admin
-    return True
 
 # lend reservation (Only admin can lend)
 @app.route('/admin/lend', methods=['POST'])
@@ -317,7 +295,7 @@ def lend():
     username = request.form['username']
     password = request.form['password']
     reservation_id = request.form['reservation_id']
-    # Authenticate user
+    # Authenticate admin
     if not authenticate_admin(username, password):
         return jsonify({'error': 'Authentication failed'})
     # Check if reservation exists
@@ -337,7 +315,7 @@ def lend():
     db.commit()
     db.close()
     # Return reservation info
-    return jsonify({'username': username, 'device': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'lent'})
+    return jsonify({'username': username, 'item': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'lent'})
 
 # return reservation (Only admin can return)
 @app.route('/admin/return', methods=['POST'])
@@ -366,7 +344,7 @@ def return_reservation():
     db.commit()
     db.close()
     # Return reservation info
-    return jsonify({'username': username, 'device': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'returned'})
+    return jsonify({'username': username, 'item': reservation[2], 'start_time': reservation[3], 'end_time': reservation[4], 'status': 'returned'})
 
 # Get overdue reservations (Only admin can get overdue reservations)
 @app.route('/admin/overdue', methods=['POST'])
@@ -449,8 +427,9 @@ def register():
     new_password = request.form['new_password']
     new_email = request.form['new_email']
     new_permissions = request.form['new_permissions']
-    # Generate new salt and hash password
-    new_salt = ''.join(random.choice('0123456789ABCDEF') for i in range(16))
+    # Generate salt in bytes
+    new_salt = os.urandom(16)
+    # Generate hash from password and salt
     new_hash = get_hash(new_password, new_salt)
     # Check if user already exists
     if user_exists(new_username):
@@ -458,52 +437,52 @@ def register():
     # Insert new user into database
     db = connect_db()
     db_cur = db.cursor()
-    db_cur.execute('INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)', (new_username, new_hash, new_salt, new_email, new_permissions, 'active'))
+    db_cur.execute('INSERT INTO users (username, hash, salt, email, permissions) VALUES (?, ?, ?, ?, ?)', (new_username, new_hash, new_salt, new_email, new_permissions))
     db.commit()
     db.close()
     # Return new user info
     return jsonify({'username': new_username, 'permissions': new_permissions})
 
-# Add new device (Only admin can add new device)
-@app.route('/admin/add_device', methods=['POST'])
-def add_device():
+# Add new item (Only admin can add new item)
+@app.route('/admin/add_item', methods=['POST'])
+def add_item():
     # Authenticate admin
     if not authenticate_admin(request.form['username'], request.form['password']):
         return jsonify({'error': 'Authentication failed'})
-    # Get new device name and description from request
-    new_device_name = request.form['new_device_name']
-    new_device_description = request.form['new_device_description']
-    # Check if device name already used
-    if device_exists(new_device_name):
-        return jsonify({'error': 'Device already exists'})
-    # Insert new device into database with status 'available'
+    # Get new item name and description from request
+    new_item_name = request.form['new_item_name']
+    new_item_description = request.form['new_item_description']
+    # Check if item name already used
+    if item_exists(new_item_name):
+        return jsonify({'error': 'item already exists'})
+    # Insert new item into database with status 'available'
     db = connect_db()
     db_cur = db.cursor()
-    db_cur.execute('INSERT INTO devices VALUES (?, ?, ?)', (new_device_name, new_device_description, 'available'))
+    db_cur.execute('INSERT INTO items (name, description, status) VALUES (?, ?, ?)', (new_item_name, new_item_description, 'available'))
     db.commit()
     db.close()
-    # Return new device info
-    return jsonify({'device_name': new_device_name, 'device_description': new_device_description, 'status': 'available'})
+    # Return new item info
+    return jsonify({'item_name': new_item_name, 'item_description': new_item_description, 'item_status': 'available'})
 
-# Remove device (Only admin can remove device)
-@app.route('/admin/remove_device', methods=['POST'])
-def remove_device():
+# Remove item (Only admin can remove item)
+@app.route('/admin/remove_item', methods=['POST'])
+def remove_item():
     # Authenticate admin
     if not authenticate_admin(request.form['username'], request.form['password']):
         return jsonify({'error': 'Authentication failed'})
-    # Get device name from request
-    device_name = request.form['device_name']
-    # Check if device exists
-    if not device_exists(device_name):
-        return jsonify({'error': 'Device does not exist'})
-    # Remove device from database
+    # Get item name from request
+    item_name = request.form['item_name']
+    # Check if item exists
+    if not item_exists(item_name):
+        return jsonify({'error': 'item does not exist'})
+    # Remove item from database
     db = connect_db()
     db_cur = db.cursor()
-    db_cur.execute('DELETE FROM devices WHERE device_name = ?', (device_name,))
+    db_cur.execute('DELETE FROM items WHERE name = ?', (item_name,))
     db.commit()
     db.close()
-    # Return device info
-    return jsonify({'device_name': device_name})
+    # Return item info
+    return jsonify({'item_name': item_name})
 
 ### END ADMIN FUNCTIONS ###
 
