@@ -1,12 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Client</title>
-</head>
-<body>
-<div id="app"></div>
-<script src="./src/main.js" type="module"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
+    <title>SimpleResv | Login</title>
+    <div id="styles"></div>
+  </head>
+  <body>
+    <!--Title-->
+    <div class="title">
+      <h1>SimpleResv</h1>
+    </div>
+    <!--Login container-->
+    <div class="login-cont">
+      <h2>Login</h2>
+      <div id="login"></div>
+      <script src="./src/login.js" type="module"></script>
+    </div>
+  </body>
 </html>

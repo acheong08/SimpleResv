@@ -1,0 +1,7 @@
+const l=function(){const r=document.createElement("link").relList;if(r&&r.supports&&r.supports("modulepreload"))return;for(const t of document.querySelectorAll('link[rel="modulepreload"]'))e(t);new MutationObserver(t=>{for(const o of t)if(o.type==="childList")for(const n of o.addedNodes)n.tagName==="LINK"&&n.rel==="modulepreload"&&e(n)}).observe(document,{childList:!0,subtree:!0});function a(t){const o={};return t.integrity&&(o.integrity=t.integrity),t.referrerpolicy&&(o.referrerPolicy=t.referrerpolicy),t.crossorigin==="use-credentials"?o.credentials="include":t.crossorigin==="anonymous"?o.credentials="omit":o.credentials="same-origin",o}function e(t){if(t.ep)return;t.ep=!0;const o=a(t);fetch(t.href,o)}};l();function m(i,r){return window.go.main.App.Login(i,r)}document.querySelector("#login").innerHTML=`
+<div class="container">
+    <input type="text" id="username" placeholder="Username" required autofocus><br>
+    <input type="password" id="password" placeholder="Password" required><br>
+    <button class="btn btn-lg btn-secondary btn-block" type="submit" onclick="login()">Sign in</button>
+</div>
+`;window.login=function(){let i=document.getElementById("username"),r=document.getElementById("password"),a=i.value,e=r.value;if(!(a===""||e===""))try{m(a,e).then(t=>{t?(console.log("Logged in successfully"),window.location.href="../home.html"):(console.error(t),alert("Login failed"),showLogin())}).catch(t=>{console.error(t)})}catch(t){console.error(t)}};
