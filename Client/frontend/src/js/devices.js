@@ -11,7 +11,10 @@ let reservedDevices = [];
 
 // Map devices to the DOM as cards
 function mapDevices() {
-  Devices("2022-01-01 00:00:00", "2022-01-01 01:00:00")
+  // Get startTime and endTime from local storage
+  let startTime = localStorage.getItem("startTime");
+  let endTime = localStorage.getItem("endTime");
+  Devices(startTime, endTime)
     .then((devices) => {
       // Log the devices
       console.log(devices);

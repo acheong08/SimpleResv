@@ -1,0 +1,23 @@
+/* Background image stretch to fill whole background */
+body{
+    background-image: url("src/assets/images/SimpleResv_Logo.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+/* Login button at the center bottom of the window */
+#login-button{
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    width: 100%;
+    height: 50px;
+    background-color: #00bcd4;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 0px;
+    border: none;
+    cursor: pointer;
+}

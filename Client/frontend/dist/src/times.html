@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
+    <title>SimpleResv | Time selection</title>
+    <div id="styles"></div>
+    <script type="module" crossorigin src="/assets/times.47a90af3.js"></script>
+    <link rel="modulepreload" href="/assets/bootstrap.aa1d4188.js">
+    <link rel="stylesheet" href="/assets/bootstrap.a5665f44.css">
+    <link rel="stylesheet" href="/assets/times.d28dcdec.css">
+    <link rel="stylesheet" href="/assets/styles.5cd3ec1f.css">
+  </head>
+  <body>
+    <!-- Two calandars which allow the user to select year, month, date, and time -->
+    <div class="title">
+      <h1>SimpleResv</h1>
+    </div>
+    <div class="app">
+      <h2>Time selection</h2>
+      <div id="time-selector" class="container">
+        <div class="container">
+          <!--Start date time-->
+          <h3>Start time</h3>
+          <div id="start-datetime"></div>
+        </div>
+        <br />
+        <hr />
+        <br />
+        <div class="container">
+          <!--End date time-->
+          <h3>End time</h3>
+          <div id="end-datetime"></div>
+        </div>
+      </div>
+    </div>
+    <br />
+    <br />
+    <br />
+    <div class="submit-bar">
+      <button id="submit-btn" onclick="nextWindow()">Next</button>
+    </div>
+    
+  </body>
+</html>

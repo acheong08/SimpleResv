@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
+    <title>SimpleResv | Device selection</title>
+    <div id="styles"></div>
+    <script type="module" crossorigin src="/assets/devices.816f04b7.js"></script>
+    <link rel="modulepreload" href="/assets/bootstrap.aa1d4188.js">
+    <link rel="modulepreload" href="/assets/App.dbb98865.js">
+    <link rel="stylesheet" href="/assets/bootstrap.a5665f44.css">
+    <link rel="stylesheet" href="/assets/devices.af014db8.css">
+    <link rel="stylesheet" href="/assets/styles.5cd3ec1f.css">
+  </head>
+  <body>
+    <!--Title-->
+    <div class="title">
+      <h1>SimpleResv</h1>
+    </div>
+    <!--App container-->
+    <div class="app">
+      <h2>Device selection</h2>
+      <div id="device-list" class="container"></div>
+    </div>    
+    <br> <br> <br>
+    <div class="submit-bar">
+      <button id="submit-btn" onclick="makeResvRequest()">
+        Next
+      </button>
+    </div>
+    
+    
+  </body>
+</html>
