@@ -10,6 +10,7 @@ import unittest
 import urllib.request
 import urllib.parse
 import urllib.error
+import random
 
 
 # Define test
@@ -71,19 +72,11 @@ class TestAll(unittest.TestCase):
         response = requests.post(url, data=data)
         print(response.json())
         assert response.status_code == 200
-        assert response.json()['username'] == 'test_user'
-        assert response.json()['permissions'] == 'user'
-    # Add new item for testing reservation
-    def test_add_item_valid2(self):
-        url = 'http://localhost:6969/admin/add_item'
-        data = {'username': 'admin', 'password': 'admin', 'new_item_name': 'test_item2', 'new_item_description': 'test_desc'}
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['item_name'] == 'test_item2'
-        assert response.json()['item_description'] == 'test_desc'
-        assert response.json()['item_status'] == 'available'
+        if response.json()['error'] == 'User already exists':
+            assert response.json()['error'] == 'User already exists'
+        else:
+            assert response.json()['username'] == 'test_user'
+            assert response.json()['permissions'] == 'user'
     # test /reserve with valid username, password, item name, start time, and end time
     def test_reserve_valid(self):
         url = 'http://localhost:6969/reserve'
@@ -101,6 +94,19 @@ class TestAll(unittest.TestCase):
         assert response.json()['username'] == 'admin'
         assert response.json()['item'] == 'test_item2'
         assert response.json()['status'] == 'pending'
+    # Add 20 items with random names
+    def test_add_items_valid3(self):
+        # Loop 20 times
+        for i in range(20):
+            # Generate random name
+            name = 'test_item' + str(random.randint(1, 100))
+            # Generate random description
+            description = 'test_desc' + str(random.randint(1, 100))
+            # Make post request with data
+            url = 'http://localhost:6969/admin/add_item'
+            data = {'username': 'admin', 'password': 'admin', 'new_item_name': name, 'new_item_description': description}
+            response = requests.post(url, data=data)
+            assert response.status_code == 200
 
 # Run tests
 if __name__ == '__main__':

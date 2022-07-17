@@ -17,8 +17,6 @@ func main() {
 	// Create application with options
 	err := wails.Run(&options.App{
 		Title:            "SimpleResv",
-		MaxWidth:         100000,
-		MaxHeight:        100000,
 		Width:            600,
 		Height:           400,
 		Assets:           assets,

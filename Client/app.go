@@ -5,13 +5,12 @@ import (
 	"fmt"
 
 	helper "github.com/acheong08/SimpleResv/Client/helpers"
-
-	//runtime "github.com/wailsapp/wails/v2/pkg/runtime"
+	runtime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx      context.Context
 	username string
 	password string
 }
@@ -44,14 +43,21 @@ func (a *App) Login(username string, password string) bool {
 		// Store username and password
 		a.username = username
 		a.password = password
-		// Make message dialog to show login success
-		//runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
-		//	Type: runtime.InfoDialog,
-		//	Title: "Login Successful",
-		//	Message: "You have successfully logged in!",
-		//})
+		// Change screen dimensions to prepare for home page
+		runtime.WindowSetSize(a.ctx, 1280, 800)
 		return true
 	}
 	// If not successful, return false
 	return false
+}
+
+// Devices takes a start and end time and returns a json list of devices
+func (a *App) Devices(start string, end string) string {
+	devices, err := helper.GetDevicesRequest(start, end)
+	if err != nil {
+		fmt.Println(err)
+		// Return error as json
+		return `{"error": "` + err.Error() + `"}`
+	}
+	return devices
 }

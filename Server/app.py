@@ -172,18 +172,46 @@ def get_items():
     # Return list of items
     return jsonify(items)
 
-# Get list of reservations
-@app.route('/reservations', methods=['GET'])
-def get_reservations():
+# Get list of devices without reservations between given times
+@app.route('/devices', methods=['POST'])
+def get_devices():
     # Define db and db_cur
     db = connect_db()
     db_cur = db.cursor()
-    # Get list of reservations from database
-    reservations = db_cur.execute('SELECT * FROM reservations').fetchall()
+    # Get start and end times from request
+    start_time = request.form['start_time']
+    end_time = request.form['end_time']
+    # Convert start and end times to timestamps
+    start_time = readable_to_timestamp(start_time)
+    end_time = readable_to_timestamp(end_time)
+    # Get list of devices from database
+    devices = db_cur.execute('SELECT * FROM items').fetchall()
     # Close database connection
     db.close()
-    # Return list of reservations
-    return jsonify(reservations)
+    # Check list of devices for reservations between given times
+    for device in devices:
+        # Define db and db_cur
+        db = connect_db()
+        db_cur = db.cursor()
+        # Get list of reservations for device
+        reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ?', (device[1],)).fetchall()
+        # Close database connection
+        db.close()
+        # Check list of reservations for reservations between given times
+        for reservation in reservations:
+            # Convert start and end times to timestamps
+            start_time_reservation = readable_to_timestamp(reservation[2])
+            end_time_reservation = readable_to_timestamp(reservation[3])
+            # Check if reservation is between given times
+            if start_time_reservation >= start_time and end_time_reservation <= end_time:
+                # Remove device from list
+                devices.remove(device)
+    # Create field names for devices
+    field_names = ['id', 'name', 'description', 'status']
+    # Create list of devices with field names
+    devices = [dict(zip(field_names, device)) for device in devices]
+    # Return list of devices
+    return jsonify(devices)
 
 # Handle reservation request
 @app.route('/reserve', methods=['POST'])
@@ -488,32 +516,33 @@ def remove_item():
 
 
 ### Running the server ###
-
+'''
 # Delete database file
 if os.path.exists(database_path):
     os.remove(database_path)
-
+'''
 # Create new database if it doesn't exist
-initialize_db()
-
-# Create database connection
-db = connect_db()
-db_cur = db.cursor()
-# Get admin username and password from config file
-with open(config_path, 'r') as config_file:
-    config = json.load(config_file)
-    # Get admin details (username, password, email)
-    admin_username = config['admin']['username']
-    admin_password = config['admin']['password']
-    admin_email = config['admin']['email']
-    # Get salt and hash from password
-    salt = os.urandom(16)
-    hash = get_hash(admin_password, salt)
-    # Insert admin into user table using cursor
-    db_cur.execute('INSERT INTO users (username, hash, salt, email, permissions) VALUES (?, ?, ?, ?, ?)', (admin_username, hash, salt, admin_email, 'admin'))
-# Commit changes to database
-db.commit()
-db.close()
+if not os.path.exists(database_path):
+    initialize_db()
+    ## Add admin details to database
+    # Create database connection
+    db = connect_db()
+    db_cur = db.cursor()
+    # Get admin username and password from config file
+    with open(config_path, 'r') as config_file:
+        config = json.load(config_file)
+        # Get admin details (username, password, email)
+        admin_username = config['admin']['username']
+        admin_password = config['admin']['password']
+        admin_email = config['admin']['email']
+        # Get salt and hash from password
+        salt = os.urandom(16)
+        hash = get_hash(admin_password, salt)
+        # Insert admin into user table using cursor
+        db_cur.execute('INSERT INTO users (username, hash, salt, email, permissions) VALUES (?, ?, ?, ?, ?)', (admin_username, hash, salt, admin_email, 'admin'))
+    # Commit changes to database
+    db.commit()
+    db.close()
 
 # Run flask server
 if __name__ == '__main__':
