@@ -216,49 +216,52 @@ def get_devices():
 # Handle reservation request
 @app.route('/reserve', methods=['POST'])
 def reserve():
-    # Get username, password, start time, end time, and item from request
-    username = request.form['username']
-    password = request.form['password']
-    start_time = request.form['start_time']
-    end_time = request.form['end_time']
-    item = request.form['item']
-    # Authenticate user
-    if not authenticate(username, password):
-        return jsonify({'error': 'Authentication failed'})
-    # Check if item exists
-    if not item_exists(item):
-        return jsonify({'error': 'Item not found'})
-    # Check if start time is before end time
-    if readable_to_timestamp(start_time) > readable_to_timestamp(end_time):
-        return jsonify({'error': 'Start time is after end time'})
-    # Check if start time is after current time
-    if readable_to_timestamp(start_time) < datetime.datetime.now().timestamp():
-        return jsonify({'error': 'Start time is before current time'})
-    # Check if end time is after current time
-    if readable_to_timestamp(end_time) < datetime.datetime.now().timestamp():
-        return jsonify({'error': 'End time is before current time'})
-    # Get conflicting reservation details
-    db = connect_db()
-    db_cur = db.cursor()
-    previous_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND end_time > ?', (item, readable_to_timestamp(start_time),)).fetchone()
-    next_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time < ?', (item, readable_to_timestamp(end_time),)).fetchone()
-    db.close()
-    # Check if start time is before end time of previous reservation
-    if previous_reservation is not None:
-        return jsonify({'error': 'Start time is before end time of previous reservation'})
-    # Check if end time is after start time of next reservation
-    if next_reservation is not None:
-        return jsonify({'error': 'End time is after start time of next reservation'})
-    # Connect to database
-    db = connect_db()
-    db_cur = db.cursor()
-    # Insert reservation into database
-    db_cur.execute('INSERT INTO reservations (username, item, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)', (username, item[1], readable_to_timestamp(start_time), readable_to_timestamp(end_time), 'pending'))
-    # Close database connection
-    db.commit()
-    db.close()
-    # Return reservation info
-    return jsonify({'username': username, 'item': item, 'start_time': start_time, 'end_time': end_time, 'status': 'pending'})
+    try:
+        # Get username, password, start time, end time, and item from request
+        username = request.form['username']
+        password = request.form['password']
+        start_time = request.form['start_time']
+        end_time = request.form['end_time']
+        item = request.form['item']
+        # Authenticate user
+        if not authenticate(username, password):
+            return jsonify({'error': 'Authentication failed'})
+        # Check if item exists
+        if not item_exists(item):
+            return jsonify({'error': 'Item not found'})
+        # Check if start time is before end time
+        if readable_to_timestamp(start_time) > readable_to_timestamp(end_time):
+            return jsonify({'error': 'Start time is after end time'})
+        # Check if start time is after current time
+        if readable_to_timestamp(start_time) < datetime.datetime.now().timestamp():
+            return jsonify({'error': 'Start time is before current time'})
+        # Check if end time is after current time
+        if readable_to_timestamp(end_time) < datetime.datetime.now().timestamp():
+            return jsonify({'error': 'End time is before current time'})
+        # Get conflicting reservation details
+        db = connect_db()
+        db_cur = db.cursor()
+        previous_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND end_time > ?', (item, readable_to_timestamp(start_time),)).fetchone()
+        next_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time < ?', (item, readable_to_timestamp(end_time),)).fetchone()
+        db.close()
+        # Check if start time is before end time of previous reservation
+        if previous_reservation is not None:
+            return jsonify({'error': 'Start time is before end time of previous reservation'})
+        # Check if end time is after start time of next reservation
+        if next_reservation is not None:
+            return jsonify({'error': 'End time is after start time of next reservation'})
+        # Connect to database
+        db = connect_db()
+        db_cur = db.cursor()
+        # Insert reservation into database
+        db_cur.execute('INSERT INTO reservations (username, item, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)', (username, item, readable_to_timestamp(start_time), readable_to_timestamp(end_time), 'pending'))
+        # Close database connection
+        db.commit()
+        db.close()
+        # Return reservation info
+        return jsonify({'username': username, 'item': item, 'start_time': start_time, 'end_time': end_time, 'status': 'pending'})
+    except:
+        return jsonify({'error': 'Error reserving item'})
 
 # Cancel reservation
 @app.route('/cancel', methods=['POST'])
@@ -546,4 +549,4 @@ if not os.path.exists(database_path):
 
 # Run flask server
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=6969, debug=True)
+    app.run(host='0.0.0.0', port=6969, debug=True)

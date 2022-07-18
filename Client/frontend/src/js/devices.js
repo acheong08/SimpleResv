@@ -2,7 +2,7 @@ import "../../src/bootstrap/css/bootstrap.css";
 import "../css/styles.css";
 import "../css/devices.css";
 
-import { Devices } from "../../wailsjs/go/main/App";
+import { Devices, Reserve } from "../../wailsjs/go/main/App";
 
 mapDevices();
 
@@ -81,11 +81,33 @@ window.addDevice = function(deviceName) {
 
 
   // MakeResvRequest function (Sends the list of reserved devices to the server)
-  window.makeResvRequest = function() {
+  window.nextWindow = function() {
     // Get the list of reserved devices
     let resvDevices = selectedDevices;
     // Parse the list to json
     let resvDevicesJson = JSON.stringify(resvDevices);
-    // Log the list of reserved devices
-    console.log(resvDevicesJson);
+    // Get start and end times from local storage
+    let startTime = localStorage.getItem("startTime");
+    let endTime = localStorage.getItem("endTime");
+    // Make the request
+    Reserve(resvDevicesJson, startTime, endTime)
+      .then((response) => {
+        // If the response is false, alert error and go back to times page
+        if (response === false) {
+          console.log(response)
+          alert("Error: Could not reserve devices");
+          window.location.href = "times.html";
+        }
+        // If the response is true, go to home page
+        else {
+          window.location.href = "home.html";
+        }
+      }
+      // If there is an error, alert error and go back to times page
+      ).catch((err) => {
+        console.log(response)
+        alert("Error: Could not reserve devices");
+        window.location.href = "times.html";
+      }
+      );
   }

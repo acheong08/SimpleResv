@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	helper "github.com/acheong08/SimpleResv/Client/helpers"
@@ -25,11 +26,6 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	// Set context
 	a.ctx = ctx
-}
-
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
 // Login takes a username and password and returns a bool indicating if the login was successful
@@ -60,4 +56,29 @@ func (a *App) Devices(start string, end string) string {
 		return `{"error": "` + err.Error() + `"}`
 	}
 	return devices
+}
+
+// Reserve takes a json list of devices and makes a reservation request for each item
+func (a *App) Reserve(items string, startTime string, endTime string) bool {
+	// parse json string into array of string
+	var itemsArray []string
+	err := json.Unmarshal([]byte(items), &itemsArray)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	// Loop through each item in the map
+	for _, item := range itemsArray {
+		// Make the reservation request
+		reserveStatus, err := helper.ReserveRequest(a.username, a.password, item, startTime, endTime)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+		// If not successful, return false
+		if !reserveStatus {
+			return false
+		}
+	}
+	return true
 }

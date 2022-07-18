@@ -85,16 +85,16 @@ func GetDevicesRequest(start string, end string) (string, error) {
 	return string(body), nil
 }
 
-// ReservationRequest makes a POST request to the server with username, password, and reservation data (item, start, end)
-func ReservationRequest(username string, password string, item string, start string, end string) (bool, error) {
+// ReserveRequest makes a POST request to the server with username, password, and reservation data (item, start, end)
+func ReserveRequest(username string, password string, item string, start string, end string) (bool, error) {
 	// Create a new form
 	form := url.Values{}
 	// Add username, password, item, start, and end to form
 	form.Add("username", username)
 	form.Add("password", password)
 	form.Add("item", item)
-	form.Add("start", start)
-	form.Add("end", end)
+	form.Add("start_time", start)
+	form.Add("end_time", end)
 	// Create a new request
 	req, err := http.NewRequest("POST", server+"/reserve", strings.NewReader(form.Encode()))
 	// Check for error

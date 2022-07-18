@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="/wails/ipc.js"></script>
+    <script src="/wails/runtime.js"></script>
+    <title>SimpleResv | Home</title>
+    <div id="styles"></div>
+  </head>
+  <body>
+    <!--SimpleResv Logo-->
+    <img id="logo" class="logo"></img>
+    <!--Actions-->
+    <div id="actions">
+      <!--Reserve items-->
+      <div id="make-resv">
+        <button class="btn btn-primary" id="mbtn">Make new reservation</button>
+      </div>
+      <!--Active reservations-->
+      <div id="view-resv">
+        <button class="btn btn-primary" id="vbtn">View pending reservations</button>
+      </div>
+    </div>
+    <script src="./js/home.js" type="module"></script>
+  </body>
+</html>

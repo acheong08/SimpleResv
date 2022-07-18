@@ -1,7 +1,0 @@
-import"./bootstrap.aa1d4188.js";/* empty css               */import{D as s}from"./App.dbb98865.js";m();let n=[];function m(){let e=localStorage.getItem("startTime"),t=localStorage.getItem("endTime");s(e,t).then(i=>{console.log(i);let c=JSON.parse(i),l=document.getElementById("device-list");l.innerHTML="";for(let r=0;r<c.length;r++){let o=c[r],d=document.createElement("div");d.className="device-list-item",d.id=`device-${o.name}`,d.innerHTML=`
-                <div class="card-body">
-                    <h5 class="card-title">${o.name}</h5>
-                    <p class="card-text">${o.description}</p>
-                    <button class="btn btn-primary" onclick="addDevice('${o.name}')" id="button-${o.name}">Add</button>
-                </div>
-                `,l.appendChild(d)}}).catch(i=>{console.error(i)})}window.addDevice=function(e){n.push(e);let t=document.getElementById(`button-${e}`);t.className="btn btn-danger",t.innerHTML="Remove",t.onclick=function(){removeDevice(e)},console.log(n),document.getElementById("submit-btn").textContent="Next ("+n.length+")"};window.removeDevice=function(e){n.splice(n.indexOf(e),1);let t=document.getElementById(`button-${e}`);t.className="btn btn-primary",t.innerHTML="Add",t.onclick=function(){addDevice(e)},console.log(n),document.getElementById("submit-btn").textContent="Next ("+n.length+")"};window.makeResvRequest=function(){let e=n,t=JSON.stringify(e);console.log(t)};
