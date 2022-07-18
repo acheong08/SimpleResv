@@ -7,7 +7,7 @@ import { Devices } from "../../wailsjs/go/main/App";
 mapDevices();
 
 // Make a global list of reserved devices
-let reservedDevices = [];
+let selectedDevices = [];
 
 // Map devices to the DOM as cards
 function mapDevices() {
@@ -32,7 +32,7 @@ function mapDevices() {
                 <div class="card-body">
                     <h5 class="card-title">${device.name}</h5>
                     <p class="card-text">${device.description}</p>
-                    <button class="btn btn-primary" onclick="reserveDevice('${device.name}')" id="button-${device.name}">Add</button>
+                    <button class="btn btn-primary" onclick="addDevice('${device.name}')" id="button-${device.name}">Add</button>
                 </div>
                 `;
         deviceList.appendChild(deviceCard);
@@ -44,22 +44,46 @@ function mapDevices() {
 }
 
 // Define reserveDevice function (Adds device to the list of reserved devices)
-window.reserveDevice = function(deviceName) {
+window.addDevice = function(deviceName) {
     // Add device to the list of reserved devices
-    reservedDevices.push(deviceName);
-    // Grey out the device card and disable the button
-    document.getElementById(`button-${deviceName}`).disabled = true;
-    document.getElementById(`button-${deviceName}`).className = "btn btn-secondary disabled";
+    selectedDevices.push(deviceName);
+    // Make the button red and change name to "Remove"
+    let button = document.getElementById(`button-${deviceName}`);
+    button.className = "btn btn-danger";
+    button.innerHTML = "Remove";
+    // Change onclick function to removeDevice
+    button.onclick = function() {
+        removeDevice(deviceName);
+    }
     // Console log the list of reserved devices
-    console.log(reservedDevices);
+    console.log(selectedDevices);
     // Update number of devices reserved at submit button
-    document.getElementById("submit-btn").textContent = "Next (" + reservedDevices.length + ")";
+    document.getElementById("submit-btn").textContent = "Next (" + selectedDevices.length + ")";
   }
   
+  // Remove device window function removes a name from the list of selected devices
+  window.removeDevice = function(deviceName) {
+    // Remove device from the list of reserved devices
+    selectedDevices.splice(selectedDevices.indexOf(deviceName), 1);
+    // Make the button green and change name to "Add"
+    let button = document.getElementById(`button-${deviceName}`);
+    button.className = "btn btn-primary";
+    button.innerHTML = "Add";
+    // Change onclick function to addDevice
+    button.onclick = function() {
+        addDevice(deviceName);
+    }
+    // Console log the list of reserved devices
+    console.log(selectedDevices);
+    // Update number of devices reserved at submit button
+    document.getElementById("submit-btn").textContent = "Next (" + selectedDevices.length + ")";
+  }
+
+
   // MakeResvRequest function (Sends the list of reserved devices to the server)
   window.makeResvRequest = function() {
     // Get the list of reserved devices
-    let resvDevices = reservedDevices;
+    let resvDevices = selectedDevices;
     // Parse the list to json
     let resvDevicesJson = JSON.stringify(resvDevices);
     // Log the list of reserved devices
