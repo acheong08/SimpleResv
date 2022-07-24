@@ -46,8 +46,8 @@ def initialize_db():
     db_cur.execute('''CREATE TABLE IF NOT EXISTS reservations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        start_time TEXT NOT NULL,
-        end_time TEXT NOT NULL,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER NOT NULL,
         item TEXT NOT NULL,
         status TEXT NOT NULL
     )''')
@@ -200,12 +200,18 @@ def get_devices():
         # Check list of reservations for reservations between given times
         for reservation in reservations:
             # Convert start and end times to timestamps
-            start_time_reservation = readable_to_timestamp(reservation[2])
-            end_time_reservation = readable_to_timestamp(reservation[3])
-            # Check if reservation is between given times
-            if start_time_reservation >= start_time and end_time_reservation <= end_time:
+            start_time_reservation = int(reservation[2])
+            end_time_reservation = int(reservation[3])
+            # Check if start time is between start and end times of the previous reservation
+            if start_time_reservation >= start_time and start_time_reservation < end_time:
                 # Remove device from list
                 devices.remove(device)
+            elif end_time_reservation > start_time and end_time_reservation <= end_time:
+                # Remove device from list
+                devices.remove(device)
+            else:
+                # Debug print
+                print('Device: ' + device[1] + ' Start: ' + str(start_time_reservation) + ' End: ' + str(end_time_reservation))
     # Create field names for devices
     field_names = ['id', 'name', 'description', 'status']
     # Create list of devices with field names

@@ -72,18 +72,25 @@ class TestAll(unittest.TestCase):
         response = requests.post(url, data=data)
         print(response.json())
         assert response.status_code == 200
-        if response.json()['error'] == 'User already exists':
+        # Check if error key in response json
+        if 'error' in response.json():
             assert response.json()['error'] == 'User already exists'
         else:
             assert response.json()['username'] == 'test_user'
             assert response.json()['permissions'] == 'user'
     # test /reserve with valid username, password, item name, start time, and end time
     def test_reserve_valid(self):
+        # Add item to reserve
+        url = 'http://localhost:6969/admin/add_item'
+        data = {'username': 'admin', 'password': 'admin', 'new_item_name': 'test_item', 'new_item_description': 'test_desc'}
+        response = requests.post(url, data=data)
+        assert response.status_code == 200
+        # Reserve test
         url = 'http://localhost:6969/reserve'
         data = {
             'username': 'admin', 
             'password': 'admin', 
-            'item': 'test_item2', 
+            'item': 'test_item', 
             'start_time': '2022-08-01 12:00:00', 
             'end_time': '2022-08-01 13:00:00'
         }
@@ -92,7 +99,7 @@ class TestAll(unittest.TestCase):
         print(response.json())
         assert response.status_code == 200
         assert response.json()['username'] == 'admin'
-        assert response.json()['item'] == 'test_item2'
+        assert response.json()['item'] == 'test_item'
         assert response.json()['status'] == 'pending'
     # Add 20 items with random names
     def test_add_items_valid3(self):
