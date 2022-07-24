@@ -1,0 +1,3 @@
+# Ignore optimized distribution files by Vite.js
+dist/
+
