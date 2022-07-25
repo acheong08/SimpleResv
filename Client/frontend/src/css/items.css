@@ -1,0 +1,35 @@
+/* Device list is a grid with three columns of equal size */
+#item-list{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+/* A card resides in item-list grid and has a slightly lighter background-color than body */
+.item-list-item{
+    border-color: black;
+    border-style: solid;
+    border-width: 0.1rem;
+    background-color: rgba(30, 42, 60, 0.9);
+    border-radius: 0.5rem;
+    padding: 1rem;
+}
+.submit-bar{
+    position: fixed;
+    bottom: 0;
+    overflow: hidden;
+    width: 100%;
+}
+#submit-btn{
+    background-color: #00bcd4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 16px;
+    margin-top: 10px;
+    margin-bottom: 0px;
+    width: 100%;
+    height: 40px;
+}

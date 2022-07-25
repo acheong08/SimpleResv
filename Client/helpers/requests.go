@@ -42,27 +42,27 @@ func LoginRequest(username string, password string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// Check if the response json contails error field
-	if response["error"] != nil {
+	// Check if the response json status field is error
+	if response["status"] == "error" {
 		return false, fmt.Errorf(response["error"].(string))
 	}
-	// Check if the response json contains permissions and username field. Else return false
-	if response["permissions"] != nil && response["username"] != nil {
+	// Check if the status field is success. Else return false
+	if response["status"] == "success" {
 		return true, nil
 	} else {
 		return false, nil
 	}
 }
 
-// GetDevicesRequest makes a POST request with start time and end times
-func GetDevicesRequest(start string, end string) (string, error) {
+// GetItemsRequest makes a POST request with start time and end times
+func GetItemsRequest(start string, end string) (string, error) {
 	// Create a new form
 	form := url.Values{}
 	// Add start and end times to form
 	form.Add("start_time", start)
 	form.Add("end_time", end)
 	// Create a new request
-	req, err := http.NewRequest("POST", server+"/devices", strings.NewReader(form.Encode()))
+	req, err := http.NewRequest("POST", server+"/items", strings.NewReader(form.Encode()))
 	// Check for error
 	if err != nil {
 		return "error", err
@@ -81,7 +81,7 @@ func GetDevicesRequest(start string, end string) (string, error) {
 	if err != nil {
 		return "error", err
 	}
-	// Return response body as string pointer
+	// Return response body as string
 	return string(body), nil
 }
 
@@ -116,12 +116,12 @@ func ReserveRequest(username string, password string, item string, start string,
 	if err != nil {
 		return false, err
 	}
-	// Check if the response json contails error field
-	if response["error"] != nil {
+	// Check if status is error
+	if response["status"] == "error" {
 		return false, fmt.Errorf(response["error"].(string))
 	}
-	// Check if the response json contains username field. Else return false
-	if response["username"] != nil {
+	// Check if status is success. Else return false
+	if response["status"] == "success" {
 		return true, nil
 	} else {
 		return false, nil

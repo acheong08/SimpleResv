@@ -47,15 +47,15 @@ func (a *App) Login(username string, password string) bool {
 	return false
 }
 
-// Devices takes a start and end time and returns a json list of devices
-func (a *App) Devices(start string, end string) string {
-	devices, err := helper.GetDevicesRequest(start, end)
+// Items takes a start and end time and returns a json list of items
+func (a *App) Items(start string, end string) string {
+	items, err := helper.GetItemsRequest(start, end)
 	if err != nil {
 		fmt.Println(err)
 		// Return error as json
-		return `{"error": "` + err.Error() + `"}`
+		return `{'status': 'error', "error": "` + err.Error() + `"}`
 	}
-	return devices
+	return items
 }
 
 // Reserve takes a json list of devices and makes a reservation request for each item

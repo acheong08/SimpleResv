@@ -8,6 +8,8 @@ import timestamp
 import datetime
 import os
 import json
+# Import tests.py
+import tests
 
 
 ### Configure Flask app ###
@@ -78,7 +80,7 @@ def readable_to_timestamp(readable_time):
     # Convert datetime object to timestamp
     timestamp = int(readable_time.timestamp())
     # Return timestamp
-    return timestamp
+    return int(timestamp)
 
 ### BACKEND ###
 def get_reservation(reservation_id):
@@ -141,133 +143,131 @@ def authenticate(username, password):
 # Handle login request
 @app.route('/login', methods=['POST'])
 def login():
-    # Define db and db_cur
-    db = connect_db()
-    db_cur = db.cursor()
-    # Get username and password from request
-    username = request.form['username']
-    password = request.form['password']
-    # Check if username exists
-    user = db_cur.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
-    if user is None:
-        return jsonify({'error': 'User not found'})
-    # Authenticate user
-    if not authenticate(username, password):
-        return jsonify({'error': 'Invalid password'})
-    # Close database connection
-    db.close()
-    # Return user info
-    return jsonify({'username': user[1], 'permissions': user[5]})
-
-# Get list of items
-@app.route('/items', methods=['GET'])
-def get_items():
-    # Define db and db_cur
-    db = connect_db()
-    db_cur = db.cursor()
-    # Get list of items from database
-    items = db_cur.execute('SELECT * FROM items').fetchall()
-    # Close database connection
-    db.close()
-    # Return list of items
-    return jsonify(items)
-
-# Get list of devices without reservations between given times
-@app.route('/devices', methods=['POST'])
-def get_devices():
-    # Define db and db_cur
-    db = connect_db()
-    db_cur = db.cursor()
-    # Get start and end times from request
-    start_time = request.form['start_time']
-    end_time = request.form['end_time']
-    # Convert start and end times to timestamps
-    start_time = readable_to_timestamp(start_time)
-    end_time = readable_to_timestamp(end_time)
-    # Get list of devices from database
-    devices = db_cur.execute('SELECT * FROM items').fetchall()
-    # Close database connection
-    db.close()
-    # Check list of devices for reservations between given times
-    for device in devices:
+    try:
         # Define db and db_cur
         db = connect_db()
         db_cur = db.cursor()
-        # Get list of reservations for device
-        reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ?', (device[1],)).fetchall()
+        # Get username and password from request
+        username = request.form['username']
+        password = request.form['password']
+        # Check if username exists
+        user = db_cur.execute('SELECT * FROM users WHERE username = ?', (username,)).fetchone()
+        if user is None:
+            return jsonify({'status': 'error', 'error': 'Authentication failed'})
+        # Authenticate user
+        if not authenticate(username, password):
+            return jsonify({'status': 'error', 'error': 'Authentication failed'})
         # Close database connection
         db.close()
-        # Check list of reservations for reservations between given times
-        for reservation in reservations:
-            # Convert start and end times to timestamps
-            start_time_reservation = int(reservation[2])
-            end_time_reservation = int(reservation[3])
-            # Check if start time is between start and end times of the previous reservation
-            if start_time_reservation >= start_time and start_time_reservation < end_time:
-                # Remove device from list
-                devices.remove(device)
-            elif end_time_reservation > start_time and end_time_reservation <= end_time:
-                # Remove device from list
-                devices.remove(device)
-            else:
-                # Debug print
-                print('Device: ' + device[1] + ' Start: ' + str(start_time_reservation) + ' End: ' + str(end_time_reservation))
-    # Create field names for devices
-    field_names = ['id', 'name', 'description', 'status']
-    # Create list of devices with field names
-    devices = [dict(zip(field_names, device)) for device in devices]
-    # Return list of devices
-    return jsonify(devices)
+        # Return user info
+        return jsonify({'status': 'success', 'username': user[1], 'permissions': user[5]})
+    except Exception as e:
+        # Print error
+        print(e)
+        # Return error
+        return jsonify({'status': 'error', 'error': 'Internal server error'})
+
+# Get list of items without reservations between given times -- tested
+@app.route('/items', methods=['POST'])
+def get_items():
+    try:
+        # Define db and db_cur
+        db = connect_db()
+        db_cur = db.cursor()
+        # Get start and end times from request
+        start_time = request.form['start_time']
+        end_time = request.form['end_time']
+        # Run tests on start and end times
+        if not tests.check_time_valid(start_time) or not tests.check_time_valid(end_time):
+            return jsonify({'status': 'error', 'error': 'Invalid time'})
+        # Convert start and end times to timestamps
+        start_time = readable_to_timestamp(start_time)
+        end_time = readable_to_timestamp(end_time)
+        # Get list of items from database
+        items = db_cur.execute('SELECT * FROM items').fetchall()
+        # Close database connection
+        db.close()
+        # Check list of items for reservations between given times
+        for item in items:
+            # Define db and db_cur
+            db = connect_db()
+            db_cur = db.cursor()
+            # Get list of reservations for item where start time is before end time and end time is after start time
+            within_reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time <= ? AND end_time >= ?', (item[1], end_time, start_time)).fetchall()
+            # Get list of reservations where start time is before start time and end time is after end time
+            encap_reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time <= ? AND end_time >= ?', (item[1], start_time, start_time)).fetchall()
+            # Close database connection
+            db.close()
+            # If there are existing reservations, remove item from list
+            if len(within_reservations) > 0:
+                items.remove(item)
+            # If there are existing reservations, remove item from list
+            elif len(encap_reservations) > 0:
+                items.remove(item)
+        # Create field names for items
+        field_names = ['id', 'name', 'description', 'status']
+        # Create list of items with field names
+        items = [dict(zip(field_names, item)) for item in items]
+        # Return list of items
+        return jsonify(items)
+    except Exception as e:
+        # Debug print
+        print(e)
+        # Return error
+        return jsonify({'status': 'error', 'error': 'Internal server error'})
 
 # Handle reservation request
 @app.route('/reserve', methods=['POST'])
 def reserve():
+    error = None
     try:
-        # Get username, password, start time, end time, and item from request
+        ## Getting forms ##
         username = request.form['username']
         password = request.form['password']
         start_time = request.form['start_time']
         end_time = request.form['end_time']
         item = request.form['item']
-        # Authenticate user
+        ## Authentication ##
         if not authenticate(username, password):
-            return jsonify({'error': 'Authentication failed'})
-        # Check if item exists
+            error = 'Authentication failed'
+        ## Error checking ##
         if not item_exists(item):
-            return jsonify({'error': 'Item not found'})
-        # Check if start time is before end time
+            error = 'Item not found'
         if readable_to_timestamp(start_time) > readable_to_timestamp(end_time):
-            return jsonify({'error': 'Start time is after end time'})
-        # Check if start time is after current time
+            error = 'Start time is after end time'
         if readable_to_timestamp(start_time) < datetime.datetime.now().timestamp():
-            return jsonify({'error': 'Start time is before current time'})
-        # Check if end time is after current time
+            error = 'Start time is before current time'
         if readable_to_timestamp(end_time) < datetime.datetime.now().timestamp():
-            return jsonify({'error': 'End time is before current time'})
-        # Get conflicting reservation details
+            error = 'End time is before current time'
         db = connect_db()
         db_cur = db.cursor()
-        previous_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND end_time > ?', (item, readable_to_timestamp(start_time),)).fetchone()
-        next_reservation = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time < ?', (item, readable_to_timestamp(end_time),)).fetchone()
+        # Get reservations for item where start time is before end time and end time is after start time
+        reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time <= ? AND end_time >= ?', (item, end_time, start_time)).fetchall()
+        # Get reservations where start time is before start time and end time is after end time
+        encap_reservations = db_cur.execute('SELECT * FROM reservations WHERE item = ? AND start_time <= ? AND end_time >= ?', (item, start_time, start_time)).fetchall()
         db.close()
-        # Check if start time is before end time of previous reservation
-        if previous_reservation is not None:
-            return jsonify({'error': 'Start time is before end time of previous reservation'})
-        # Check if end time is after start time of next reservation
-        if next_reservation is not None:
-            return jsonify({'error': 'End time is after start time of next reservation'})
-        # Connect to database
-        db = connect_db()
-        db_cur = db.cursor()
-        # Insert reservation into database
-        db_cur.execute('INSERT INTO reservations (username, item, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)', (username, item, readable_to_timestamp(start_time), readable_to_timestamp(end_time), 'pending'))
-        # Close database connection
-        db.commit()
-        db.close()
-        # Return reservation info
-        return jsonify({'username': username, 'item': item, 'start_time': start_time, 'end_time': end_time, 'status': 'pending'})
+        # If there are existing reservations, error
+        if len(reservations) > 0:
+            error = 'Item is reserved'
+        elif len(encap_reservations) > 0:
+            error = 'Item is reserved'
+        if error is None:
+            ## Create reservation ##
+            db = connect_db()
+            db_cur = db.cursor()
+            # Insert reservation into database
+            db_cur.execute('INSERT INTO reservations (username, item, start_time, end_time, status) VALUES (?, ?, ?, ?, ?)', (username, item, readable_to_timestamp(start_time), readable_to_timestamp(end_time), 'pending'))
+            # Close database connection
+            db.commit()
+            db.close()
+            return jsonify({'status': 'success'})
+        else:
+            # Debug print
+            print(error)
+            return jsonify({'status': 'error', 'error': error})
     except:
-        return jsonify({'error': 'Error reserving item'})
+        print('Error')
+        return jsonify({'status': 'error', 'error': 'Internal server error'})
 
 # Cancel reservation
 @app.route('/cancel', methods=['POST'])

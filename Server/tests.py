@@ -1,121 +1,45 @@
-# Run app.py and test the app
-import threading
+# This is meant to be imported and used as a module.
+# It is not meant to be run directly.
+
+### Imports for tests ###
 import time
-import subprocess
-import os
-import sys
-import requests
-import json
-import unittest
-import urllib.request
-import urllib.parse
-import urllib.error
-import random
+import datetime
+
+### Utility functions ###
+def readable_to_timestamp(readable_time):
+    # Convert readable time to datetime object
+    readable_time = datetime.datetime.strptime(readable_time, '%Y-%m-%d %H:%M:%S')
+    # Convert datetime object to timestamp
+    timestamp = int(readable_time.timestamp())
+    # Return timestamp
+    return timestamp
 
 
-# Define test
-class TestAll(unittest.TestCase):
-    ### Logging in ###
-    # Test /login endpoint with valid admin credentials
-    def test_login_valid(self):
-        url = 'http://localhost:6969/login'
-        data = {'username': 'admin', 'password': 'admin'}
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['username'] == 'admin'
-        assert response.json()['permissions'] == 'admin'
-    # Test /login endpoint with invalid admin credentials
-    def test_login_invalid(self):
-        url = 'http://localhost:6969/login'
-        data = {'username': 'admin', 'password': 'admin1'}
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['error'] == 'Invalid password'
-    
-    ### Admin ###
-    # Test /admin/add_item endpoint with valid admin credentials
-    def test_add_item_valid(self):
-        url = 'http://localhost:6969/admin/add_item'
-        data = {'username': 'admin', 'password': 'admin', 'new_item_name': 'test_item', 'new_item_description': 'test_desc'}
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['item_name'] == 'test_item'
-        assert response.json()['item_description'] == 'test_desc'
-        assert response.json()['item_status'] == 'available'
-    # Test /admin/remove_item endpoint with valid admin credentials and item_name
-    def test_remove_item_valid(self):
-        url = 'http://localhost:6969/admin/remove_item'
-        data = {'username': 'admin', 'password': 'admin', 'item_name': 'test_item'}
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['item_name'] == 'test_item'
-    # Test /admin/register endpoint with valid admin credentials and new_username, new_password, new_email, and new_permissions
-    def test_register_valid(self):
-        url = 'http://localhost:6969/admin/register'
-        data = {
-            'username': 'admin', 
-            'password': 'admin', 
-            'new_username': 'test_user', 
-            'new_password': 'test_pass', 
-            'new_email': 'user@example.com',
-            'new_permissions': 'user'
-        }
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        # Check if error key in response json
-        if 'error' in response.json():
-            assert response.json()['error'] == 'User already exists'
-        else:
-            assert response.json()['username'] == 'test_user'
-            assert response.json()['permissions'] == 'user'
-    # test /reserve with valid username, password, item name, start time, and end time
-    def test_reserve_valid(self):
-        # Add item to reserve
-        url = 'http://localhost:6969/admin/add_item'
-        data = {'username': 'admin', 'password': 'admin', 'new_item_name': 'test_item', 'new_item_description': 'test_desc'}
-        response = requests.post(url, data=data)
-        assert response.status_code == 200
-        # Reserve test
-        url = 'http://localhost:6969/reserve'
-        data = {
-            'username': 'admin', 
-            'password': 'admin', 
-            'item': 'test_item', 
-            'start_time': '2022-08-01 12:00:00', 
-            'end_time': '2022-08-01 13:00:00'
-        }
-        # Make post request with data
-        response = requests.post(url, data=data)
-        print(response.json())
-        assert response.status_code == 200
-        assert response.json()['username'] == 'admin'
-        assert response.json()['item'] == 'test_item'
-        assert response.json()['status'] == 'pending'
-    # Add 20 items with random names
-    def test_add_items_valid3(self):
-        # Loop 20 times
-        for i in range(20):
-            # Generate random name
-            name = 'test_item' + str(random.randint(1, 100))
-            # Generate random description
-            description = 'test_desc' + str(random.randint(1, 100))
-            # Make post request with data
-            url = 'http://localhost:6969/admin/add_item'
-            data = {'username': 'admin', 'password': 'admin', 'new_item_name': name, 'new_item_description': description}
-            response = requests.post(url, data=data)
-            assert response.status_code == 200
+# Each test is a function that takes arguments and verifies if the arguments are correct.
 
-# Run tests
-if __name__ == '__main__':
-    unittest.main()
-    sys.exit(0)
+### Tests for time ###
+# Takes a readable time string and verifies if it is a valid time.
+def check_time_valid(readable_time):
+    # Check if the time is a string.
+    if not isinstance(readable_time, str):
+        # Debug print
+        print('Time is not a string.')
+        return False
+    # Check if the time is in the correct format of YYYY-MM-DD HH:MM:SS.
+    if not readable_time.count('-') == 2 and not readable_time.count(':') == 2:
+        # Debug print
+        print('Time is not in the correct format of YYYY-MM-DD HH:MM:SS.')
+        return False
+    # Try to convert the time to a timestamp from format   
+    try:
+        timestamp = readable_to_timestamp(readable_time)
+    except ValueError:
+        return False
+    # Check if timestamp is in the correct range.
+    if timestamp < 0 or timestamp > 2**32:
+        return False
+    # If the timestamp is before current time, return false.
+    if timestamp < time.time():
+        return False
+    # If all checks pass, return true.
+    return True

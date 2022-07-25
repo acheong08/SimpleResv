@@ -1,0 +1,44 @@
+/* ID logo fit */
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* ID actions grid with two columns */
+#actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-gap: 20px;
+}
+#vbtn {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  /* White text, dark purple background. button.*/
+  background-color: rgb(34, 75, 86);
+  color: rgb(255, 255, 255);
+  border: 1px solid #000;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#mbtn {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  /* White text, dark purple background. button.*/
+  background-color: rgb(31, 47, 86);
+  color: rgb(255, 255, 255);
+  border: 1px solid #000;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}

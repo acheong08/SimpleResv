@@ -2,7 +2,7 @@ module github.com/acheong08/SimpleResv/Client
 
 go 1.17
 
-require github.com/wailsapp/wails/v2 v2.0.0-beta.39.2
+require github.com/wailsapp/wails/v2 v2.0.0-beta.40
 
 require (
 	github.com/bep/debounce v1.2.1 // indirect

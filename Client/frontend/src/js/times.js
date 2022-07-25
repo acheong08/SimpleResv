@@ -150,8 +150,8 @@ window.nextWindow = function () {
   // Store startTime and endTime in localStorage
   localStorage.setItem("startTime", startTime);
   localStorage.setItem("endTime", endTime);
-  // Redirect to next page (devices.html)
-  window.location.href = "devices.html";
+  // Redirect to next page (items.html)
+  window.location.href = "items.html";
 };
 
 // String to date function

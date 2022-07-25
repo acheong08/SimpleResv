@@ -7,9 +7,10 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
+        home: resolve(__dirname, 'src/home.html'),
         font: resolve(__dirname, 'src/assets/fonts/nunito-v16-latin-regular.woff2'),
         login: resolve(__dirname, 'src/login.html'),
-        devices: resolve(__dirname, 'src/devices.html'),
+        items: resolve(__dirname, 'src/items.html'),
         times: resolve(__dirname, 'src/times.html'),
       }
     }
